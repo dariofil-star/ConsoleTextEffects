@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.Remoting.Channels;
+using System.Security.Policy;
 using System.Threading;
 
 namespace ConsoleTextEffects
@@ -7,7 +9,22 @@ namespace ConsoleTextEffects
     {
         static void Main(string[] args)
         {
+            var fg = Console.ForegroundColor;
+            Console.CursorVisible = false;
             Console.Clear();
+            TextEffect.BlurbText(0, "This is an example of Blurb Text effect.", "center", 20).Wait();
+            TextEffect.MatrixText(1, "This is an example of matrix text effect This is an example of matrix text effect").Wait();
+            Thread.Sleep(2000);
+
+            Console.Clear();
+            var token = new CancellationTokenSource();
+            TextEffect.MatrixText(0, 0, token.Token);
+            Thread.Sleep(10000);
+            token.Cancel();
+            Console.Clear();
+
+            Console.ForegroundColor = fg;
+
             Console.WriteLine("These examples will run Synchronously...");
 
             TextEffect.MatrixText(1, "This is an example of matrix text effect This is an example of matrix text effect").Wait();

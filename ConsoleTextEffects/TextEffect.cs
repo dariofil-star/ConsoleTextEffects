@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,7 +68,7 @@ namespace ConsoleTextEffects
         {
             return Task.Factory.StartNew(() =>
             {
-                var random = new Random(Thread.CurrentThread.GetHashCode());
+                var random = new Random(Thread.CurrentThread.ManagedThreadId);
                 var chars =
                     "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
@@ -142,7 +144,7 @@ namespace ConsoleTextEffects
 
             return Task.Factory.StartNew(() =>
             {
-                bool visible = true;
+                var visible = true;
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
                     lock (_lockObject)
@@ -156,5 +158,105 @@ namespace ConsoleTextEffects
                 }
             }, cancellationTokenSource.Token);
         }
+
+        public static Task MatrixText(int width, int height, CancellationToken token)
+        {
+            if (width == 0) width = Console.WindowWidth;
+            if (height == 0) height = Console.WindowHeight;
+
+            return Task.Factory.StartNew(() =>
+            {
+                var random = new Random(Thread.CurrentThread.ManagedThreadId);
+                // Initialize columns with random heights
+                var columns = new int[width];
+                for (var i = 0; i < columns.Length; i++)
+                {
+                    columns[i] = random.Next(height);
+                }
+
+                while (!token.IsCancellationRequested)
+                {
+                    for (var x = 0; x < columns.Length; x++)
+                    {
+                        // Randomly decide if the current column should print a character or not
+                        if (random.Next(10) < 2)
+                        {
+                            Console.SetCursorPosition(x, columns[x]);
+                            Console.ForegroundColor = GetRandomGreenShade(random);
+                            Console.Write(GetRandomCharacter(random));
+
+                            // Move the column position down
+                            columns[x]++;
+
+                            // Reset column to the top when it reaches the bottom
+                            if (columns[x] >= height)
+                            {
+                                columns[x] = 0;
+                            }
+                        }
+                    }
+
+                    Thread.Sleep(50); // Small delay to control the speed of the effect
+                }
+
+                return Task.CompletedTask;
+            }, token);
+        }
+
+        static char GetRandomCharacter(Random random)
+        {
+            return (char)random.Next(32, 126);
+        }
+
+        static ConsoleColor GetRandomGreenShade(Random random)
+        {
+            // Return different shades of green to simulate the matrix style text
+            var colorChoice = random.Next(3);
+            switch (colorChoice)
+            {
+                case 0: return ConsoleColor.DarkGreen;
+                case 1: return ConsoleColor.Green;
+                case 2: return ConsoleColor.White;
+            }
+            return ConsoleColor.Green;
+        }
+
+        public static Task BlurbText(int line, string text, string justification, int delay = 50)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                var random = new Random(Thread.CurrentThread.ManagedThreadId);
+
+                StringBuilder displayBuilder = new StringBuilder(new string(' ', text.Length));
+
+                for (int i = 0; i < text.Length; i++)
+                {
+                    if (string.Equals(text[i].ToString(), " "))
+                    {
+                        displayBuilder[i] = (char)32;
+                    }
+                    else
+                    {
+                        displayBuilder[i] = (char)random.Next(32, 126); // A-Z
+                    }
+
+                    Console.CursorTop = line;
+                    Console.WriteLine(displayBuilder);
+                    Thread.Sleep(delay);
+                }
+
+                for (int i = 0; i < text.Length; i++)
+                {
+                    displayBuilder[i] = text[i];
+                    Console.CursorTop = line;
+                    Console.WriteLine(displayBuilder);
+                    Thread.Sleep(delay);
+                }
+
+                return Task.CompletedTask;
+            });
+        }
+
+        
     }
 }
